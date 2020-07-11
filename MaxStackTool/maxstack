@@ -1,0 +1,11 @@
+echo Command: $1
+echo ===============================================
+echo Command output:
+echo ""
+pin -t obj-ia32/MaxStackTool.so -o /tmp/maxstack_temp.log -- $1
+echo ===============================================
+echo maxstack output:
+echo ""
+cat /tmp/maxstack_temp.log
+echo ===============================================
+rm /tmp/maxstack_temp.log

@@ -1,0 +1,11 @@
+echo Command: $1
+echo ===============================================
+echo Command output:
+echo ""
+pin -t obj-ia32/MallocWrapTool.so -o /tmp/wrapmalloc_temp.log -- $1
+echo ===============================================
+echo wrapmalloc output:
+echo ""
+cat /tmp/wrapmalloc_temp.log
+echo ===============================================
+rm /tmp/wrapmalloc_temp.log

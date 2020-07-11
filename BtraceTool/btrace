@@ -1,0 +1,10 @@
+echo Command: $1
+echo ===============================================
+echo Command output:
+pin -t obj-ia32/BtraceTool.so -o /tmp/temp_btrace.log -- $1
+echo ===============================================
+echo btrace output:
+echo ===============================================
+cat /tmp/temp_btrace.log
+echo ===============================================
+rm /tmp/temp_btrace.log

@@ -1,0 +1,11 @@
+echo Command: $1
+echo ===============================================
+echo Command output:
+echo ""
+pin -t obj-ia32/CTCountTool.so -o /tmp/ctcount_temp.log -- $1
+echo ===============================================
+echo ctcount output:
+echo ""
+cat /tmp/ctcount_temp.log
+echo ===============================================
+rm /tmp/ctcount_temp.log

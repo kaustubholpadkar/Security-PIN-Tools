@@ -1,0 +1,307 @@
+# README
+
+# ------------------------------------------------------------------------------------------------------------------------ #
+
+# ASSIGNMENT 3: Binary Instrumentation
+# CSE 509: COMPUTER SYSTEM SECURITY
+# STONY BROOK UNIVERSITY
+
+# Author: Kaustubh Olpadkar
+# SBU ID: 112584724
+
+# ------------------------------------------------------------------------------------------------------------------------ #
+
+## I opted to complete the Assignment 3 individually.
+## I have solved all 3 warmup problems.
+## I have primarily developed "btrace" Security Application.
+
+## I have also worked on the 2nd Security Application 3.2 Stack Use Analysis and Stack Pivoting Detection. In which I have worked on the 1st part of finding maximum stack size reached during execution with multithreading supported. I have not worked on the 2nd part of stack pivoting detection.
+
+## All the PINTOOLS I have developed support multithreading.
+
+## I have referred the examples provided in PIN setup itself (in /source/tools/ directory of PIN) and the PIN's User Guide provided on PIN's official website for my study of pintool.
+
+# ------------------------------------------------------------------------------------------------------------------------ #
+
+## Side Note:
+
+In my machine, I have extracted PIN to folder /home/sekar/Downloads/pin-3.13-98189-g60a6ef199-gcc-linux. You may extract it in another folder. Pin Version is pin-3.13.
+
+# ------------------------------------------------------------------------------------------------------------------------ #
+
+## Setup:
+
+1. Setting Environment Variables
+
+'''
+export PATH="/home/sekar/Downloads/pin-3.13-98189-g60a6ef199-gcc-linux:$PATH"
+export PIN_ROOT=/home/sekar/Downloads/pin-3.13-98189-g60a6ef199-gcc-linux
+export INTEL_JIT_PROFILER32=/home/sekar/Downloads/pin-3.13-98189-g60a6ef199-gcc-linux/ia32/lib/libpinjitprofiling.so
+export TOOLS_ROOT=/home/sekar/Downloads/pin-3.13-98189-g60a6ef199-gcc-linux/source/tools
+'''
+
+-> Setting above environment variables is important for compiling and executing the PINTOOLS.
+
+2. Change Directory to Assignment Directory
+
+'''
+cd /path/to/assignment/directory/
+'''
+
+3. Directory "Tests" contains the Test Programs for the Warmup problems and Security Applications.
+
+4. Other Directories are for different different PINTOOLS for the Warmup problems and Security Applications.
+
+5. Run "make all" to compile all the files. To remove compiled file you can run "make clean".
+
+'''
+make all
+'''
+
+# ------------------------------------------------------------------------------------------------------------------------ #
+
+## WARMUP PROBLEMS:
+
++---+-----------------------------------------------+
+| 1 | Counting the number of Basic Blocks Executed: |
++---+-----------------------------------------------+
+
+## Setup:
+
+1. cd BBCountTool
+
+## Basic Examples:
+
+-> ls command    : $./bbcount "ls"
+
+-> ls -l command : $./bbcount "ls -l"
+
+-> gedit         : $./bbcount "gedit filename1.txt"
+
+## Test Examples:
+
+"Tests/bbcount_test1.c" is a test program for BBCountTool. It takes 1st argument as number and prints numbers accordingly.
+
+Mainly the program has this for loop. The content inside for loop is executed repeatedly. Thus, every time we increase the count, the number of basic blocks executed should also increase by constant amount.
+
+for (int i = 0; i < count; i++) {
+    printf("%d", i);
+}
+
+For example:
++---------------+---------+
+|input argument | output. |
++---------------+---------+
+|0			    | 0		  |
+|1			    | 01	  |
+|2			    | 012	  |
+|3			    | 0123	  |
+|4			    | 01234	  |
++---------------+---------+
+
+-> $./bbcount "../Tests/bbcount_test1.out 1"
+-> $./bbcount "../Tests/bbcount_test1.out 2"
+-> $./bbcount "../Tests/bbcount_test1.out 3"
+-> $./bbcount "../Tests/bbcount_test1.out 4"
+
+You should get a constant difference in above tests when we increase the argument by 1. In my experiments I found the difference between basic blocks executed was 112.
+
+
++---+-----------------------------------------------+
+|   | 		Wrapping Malloc: Count number of  		|
+| 2 | 	   calls made to malloc and the total       |
+|   | 		   amount of memory allocated			|
++---+-----------------------------------------------+
+
+## Setup:
+
+1. cd MallocWrapTool
+
+## Basic Examples:
+
+-> ls command    : $./wrapmalloc "ls"
+
+-> ls -l command : $./wrapmalloc "ls -l"
+
+-> gedit         : $./wrapmalloc "gedit filename1.txt"
+
+## Test Examples:
+
+"Tests/wrapmalloc_test1.c" is a test program for MallocWrapTool. It takes 2 numbers as command line arguments. The 1st argument is the number of mallocs to be executed per thread and the 2nd argument is the number of threads to be spawned for this task. Each malloc tries to allocate 100 bytes of memory.
+
+Main features of this test example are shown below.
+
+'''
+void allocate(int count) {
+  for (int i = 0; i < count; i++) {
+    malloc(100);
+  }
+}
+
+for (int i=0; i<nthreads; i++) {
+    pthread_create(&t[i], NULL, allocate, count);
+}
+'''
+
+## In following test cases, you will see that the number of malloc calls will increase by 1 and the memory allocated with increase by 100 bytes.
+
+-> $./wrapmalloc "../Tests/wrapmalloc_test1.out 1 1"		# 1 malloc + 1 thread 
+-> $./wrapmalloc "../Tests/wrapmalloc_test1.out 2 1"		# 2 malloc + 1 thread 
+-> $./wrapmalloc "../Tests/wrapmalloc_test1.out 3 1"		# 3 malloc + 1 thread 
+-> $./wrapmalloc "../Tests/wrapmalloc_test1.out 4 1"		# 4 malloc + 1 thread 
+
+Now Let's increase thread count.
+
+## Here, number of calls to malloc per thread is 1 but number of threads increasing. So, here in each test number of malloc calls will increase by 1 and allocatted memory will increase by 100 + few more bytes per thread.
+
+-> $./wrapmalloc "../Tests/wrapmalloc_test1.out 1 1"		# 1 malloc + 1 thread 
+-> $./wrapmalloc "../Tests/wrapmalloc_test1.out 1 2"		# 1 malloc + 2 thread 
+-> $./wrapmalloc "../Tests/wrapmalloc_test1.out 1 3"		# 1 malloc + 3 thread 
+-> $./wrapmalloc "../Tests/wrapmalloc_test1.out 1 4"		# 1 malloc + 4 thread 
+
+## To see the overall effects of increasing Number of Mallocs and Number of Threads try out following tests cases. The tests cases are varified and results are in accordance with the basic logic.
+
+-> $./wrapmalloc "../Tests/wrapmalloc_test1.out 1 1"		# 1 malloc + 1 thread
+-> $./wrapmalloc "../Tests/wrapmalloc_test1.out 2 2"		# 2 malloc + 2 thread
+-> $./wrapmalloc "../Tests/wrapmalloc_test1.out 4 2"		# 4 malloc + 2 thread
+-> $./wrapmalloc "../Tests/wrapmalloc_test1.out 4 4"		# 4 malloc + 4 thread
+
+
++---+---------------------------------------------------------------------+
+|   | Counting the number of Control Flow Transfer Instructions Executed: |
+| 3 | 																	  |
+|   | 						Direct + Indirect + Others 					  |
++---+---------------------------------------------------------------------+
+
+
+## Setup:
+
+1. cd CTCountTool
+
+
+## Basic Examples:
+
+-> ls command    : $./ctcount "ls"
+
+-> ls -l command : $./ctcount "ls -l"
+
+-> gedit         : $./ctcount "gedit filename1.txt"
+
+
+## Test Examples:
+
+"Tests/ctcount_test1.c" is a test program for CTCountTool. It takes 1st argument as number and increments an integer in a loop that many times.
+
+Main features of this test example are shown below.
+
+'''
+int ans = 0;
+
+for (int i = 0; i < count; i++) {
+   ans++;
+}
+'''
+
+-> $./ctcount "../Tests/ctcount_test1.out 1"
+-> $./ctcount "../Tests/ctcount_test1.out 2"
+-> $./ctcount "../Tests/ctcount_test1.out 3"
+-> $./ctcount "../Tests/ctcount_test1.out 4"
+
+In this test case you will see that with the increase in argument the loop is executed more times. Thus, the direct control transfers increase by 1 everytime we increase the loop count and the other control flow transfers also change with multiple of the count we pass as argument. In this example indirect control transfers should not change with the argument passed and it remains same.
+
+
+# ------------------------------------------------------------------------------------------------------------------------ #
+
+## SECURITY APPLICATIONS:
+
++---+-----------------------------------------------+
+| 1 | 					BTRACE 						|
++---+-----------------------------------------------+
+
+System Calls Handled:
+
++-----------+-----------+
+|exit		|  fork		|    
+|read		|  write	|    
+|stat		|  getpid	|    
+|setuid		|  open		|    
+|close		|  creat	|    
+|execve		|  chdir	|    
+|time		|  chmod	|    
+|getuid		|  access	|    
+|kill		|  rename	|    
+|mkdir		|  rmdir	|
+|brk		|  chroot	|
+|reboot		|  mprotect	|
+|chown		|  mmap2	|
+|exit_group	|  fstat	|
+|fstat64	|  getdents	|
+|getdents64	|  ioctl	|
++-----------+-----------+
+
+-> The system calls which have the filepath, the path is shown as string in output.
+
+-> The numerical arguments like unsigned integers, long, int etc are shown as their respective types.
+
+-> Strace tool parses strcut as string, but we have kept its address as hexadecimal number.
+
+-> For the system calls other than the above, it displays the arguments as hexadecimal number.
+
+-> For "read" and "write" system calls, we show the buffer as string of maximum 8 characters suffixed with "..." symbol to indicate that the actual string is longer.
+
+-> For "open" system call, we also parse the mode as O_RDONLY, O_WRONLY or O_RDWR.
+
+-> The tool also support multithreading applications. We use the mutex locking mechanisms to ensure the syncronization in the critical regions of code. We maintain a maps that stores the previous system call number and one flag for each thread so that the threads do not confuse with each other's private data regarding the previous system call executed.
+
+-> I have verified my results of btrace by comparing it with that of the strace for various applications.
+
+## Setup:
+
+1. cd BtraceTool
+
+
+## Basic Examples:
+
+-> ls command    : $./btrace "ls"
+
+-> ls -l command : $./btrace "ls -l"
+
+-> gedit         : $./btrace "gedit filename1.txt"
+
+
+
++---+-----------------------------------------------+
+| 2 | 				MAX STACK SIZE 					|
++---+-----------------------------------------------+
+
+## Setup:
+
+1. cd MaxStackTool
+
+
+## Basic Examples:
+
+-> ls command    : $./maxstack "ls"
+
+-> ls -l command : $./maxstack "ls -l"
+
+-> gedit         : $./maxstack "gedit filename1.txt"
+
+## Test Examples:
+
+"Tests/maxstack_test1.c" is a test program for MaxStackTool. It takes a number x as a command-line argument, and computes the sum 1 + 2 + 3 + · · · + x recursively.
+
+In this example, as we increase the x, the recursion depth will increase and thus maximum stack size will increase by constant rate. In my experiments, as I increase x from 100 to 101, 102, 103 and so on, the stack size increases by 32 bytes.
+
+-> $./maxstack "../Tests/maxstack_test1.out 100"
+-> $./maxstack "../Tests/maxstack_test1.out 101"
+-> $./maxstack "../Tests/maxstack_test1.out 102"
+-> $./maxstack "../Tests/maxstack_test1.out 103"
+
+
+"Tests/maxstack_test2.c" is a multithreading test program for MaxStackTool. It has 3 more threads apart from the main thread and our tool will print out maximum stack usage for each thread. I have taken this program from GeeksforGeek website. It is a simple multithreading program in C with 3 child threads.
+
+-> $./maxstack "../Tests/maxstack_test2.out"
+
+
+

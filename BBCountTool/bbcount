@@ -1,0 +1,11 @@
+echo Command: $1
+echo ===============================================
+echo Command output:
+echo ""
+pin -t obj-ia32/BBCountTool.so -o /tmp/bbcount_temp.log -- $1
+echo ===============================================
+echo bbcount output:
+echo ""
+cat /tmp/bbcount_temp.log
+echo ===============================================
+rm /tmp/bbcount_temp.log
